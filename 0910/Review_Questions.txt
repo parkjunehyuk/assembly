@@ -1,0 +1,244 @@
+1. In 32-bit mode, aside from the stack pointer (ESP), what other register points to variables on
+the stack?
+(32비트 모드에서 스택 포인터(ESP) 외에 스택에 있는 변수를 가리키는 레지스터는 무엇인가요?)
+
+EBP(Base Pointer)
+
+ESP는 스택의 최상단(최근 데이터)을 늘 가리키며 데이터가 들어가고 나올때마다 실시간으로 계속 이동하고
+EBP는 특정 함수가 실행되는 동안 고정되는(함수에 속한 변수들) 정확한 "기준점" 잡아내며 함수 내부의 지역 변수나 전달된 매개변수를 안정적으로 찾아갈 수 있게 도와준다.
+
+
+
+2. Name at least four CPU status flags.
+
+Carry Flag(CF), Zero Flag(ZF), Sign Flag(SF), Overflow Flag(OF)
+
+플래그는 CPU가 연산을 마친 뒤 결과 상태를 기록하는 1비트짜리 스위치입니다. 연산 결과가 0인지(ZF), 음수인지(SF), 범위를 넘쳤는지(CF/OF) 등을 나타냅니다.
+
+
+
+3. Which flag is set when the result of an unsigned arithmetic operation is too large to fit into
+the destination?
+(부호 없는(Unsigned) 수의 산술 연산 결과가 너무 크면 어떤 플래그가 설정되나요?)
+
+CarryFlag(CF)
+
+부호가 없는 정수를 더했는데 준비된 자릿수(예: 8비트)로 표현할 수 있는 최대치(255)를 넘어가면 '올림수(Carry)'가 발생하면서 CF가 CF = 1로 켜집니다. 그리고 넘친 숫자는 0으로 표기 됩니다.
+
+
+
+4. Which flag is set when the result of a signed arithmetic operation is either too large or too
+small to fit into the destination?
+(부호 있는(Signed) 수의 연산 결과가 범위를 초과(너무 크거나 작음)할 때 설정되는 플래그는 무엇인가요?)
+
+Overflow Flag(OF)
+
+양수와 음수를 구분하는 '부호 있는 수' 연산에서, 양수끼리 더했는데 음수가 되거나 음수끼리 더했는데 양수가 되는 등 양/음수 부호가 깨지는 오류가 발생하면 OF가 켜집니다.
+
+
+
+5. (True/False): When a register operand size is 32 bits and the REX prefix is used, the R8D
+register is available for programs to use.
+(레지스터 크기가 32비트이고 REX 접두사를 사용할 때, R8D 레지스터를 사용할 수 있다.)
+
+True
+
+64비트 모드로 넘어가면서 CPU 레지스터 개수가 확장되었습니다. 기계어 명령어 앞에 REX 접두사라는 특별한 바이너리 코드를 붙이면 확장된 레지스터인 R8D~(32비트 크기)를 접근할 수 있습니다.
+
+
+
+
+6. Which flag is set when an arithmetic or logical operation generates a negative result?
+(산술 또는 논리 연산 결과가 음수일 때 설정되는 플래그는 무엇인가요?)
+
+Sign Flag(SF)
+
+연산 결과의 가장 왼쪽 비트(최상위 비트, MSB)가 1(음수를 의미)이면 SF가 1로 설정됩니다.
+
+
+7. Which part of the CPU performs floating-point arithmetic?
+(CPU의 어느 부분이 부동소수점(실수) 연산을 수행하나요?)
+
+FPU(Floating-Point Unit)
+
+정수만 처리하는 일반 계산장치(ALU)와 달리, 소수점이 있는 실수 계산(3.14 X 2.5 등)을 전담하여 빠르게 처리하는 전용 부품입니다.
+
+
+
+8. On a 32-bit processor, how many bits are contained in each floating-point data register?
+(32비트 프로세서에서 각 부동소수점 데이터 레지스터의 크기는 몇 비트인가요?)
+
+80bit
+
+해설: x87 FPU라 불리는 실수 연산용 레지스터 내부 구조는 오차를 줄이기 위해 32비트 CPU 시절에도 80비트 확장 정밀도 방식을 사용했습니다.
+
+소수점 계산은 오차가 잘생기므로 여유 공간을 만들어서 사용해 왔다.
+
+
+
+9. (True/False): The x86-64 instruction set is backward-compatible with the x86 instruction set.
+(x86-64 명령어 집합은 기존 x86 명령어 집합과 하위 호환된다.)
+
+True(x86-64는 x86에서도 실행한다.)
+
+64비트 최신 CPU에서도 32비트나 16비트 시절의 옛날 프로그램을 수정 없이 그대로 실행할 수 있도록 설계되었습니다.
+
+
+
+10. (True/False): In current 64-bit chip implementations, all 64 bits are used for addressing.
+현재 64비트 칩 구현체에서는 64비트 전체를 주소 지정에 사용한다.
+
+False
+
+이론상 64비트 전체 주소를 쓸 수 있지만, 현재 실제 하드웨어는 비용과 효율성을 위해 하위 48비트 또는 57비트 정도만 메모리 주소를 지정하는 데 사용합니다.
+
+나머지는 부호 확장, 보안 기능, 프로그래밍 언어 꼼수
+
+
+
+11. (True/False): The Itanium instruction set is completely different from the x86 instruction set.
+(아이타니움(Itanium) 명령어 집합은 x86 명령어 집합과 완전히 다르다.)
+
+True
+
+인텔이 과거에 다르게 시도했던 IA-64(아이타니움) 아키텍처는 기존 x86 구조를 완전히 버린 별개의 방식이었습니다. (현재 표준인 x86-64와는 다릅니다.)
+
+
+
+
+12. (True/False): Static RAM is usually less expensive than dynamic RAM.
+(SRAM(Static RAM)은 일반적으로 DRAM(Dynamic RAM)보다 저렴하다.)
+
+False
+
+SRAM은 트랜지스터 여러 개로 만들어져 속도가 매우 빠르고 재충전이 필요 없지만 구조가 복잡하여 더 패키징 비용이 비쌉니다. 그래서 CPU 캐시 메모리 같은 소량 전용으로 쓰이고, 우리가 일반적으로 꽂는 메인 메모리는 저렴한 DRAM입니다.
+
+
+
+13. (True/False): The 64-bit RDI register is available when the REX prefix is used.
+(REX 접두사를 사용하면 64비트 RDI 레지스터를 사용할 수 있다.)
+
+True
+
+REX 접두사를 붙여 64비트 전용 확장 레지스터 및 인덱스 레지스터인 RDI에 접근할 수 있습니다.
+
+
+RDI: 기존 레지스터를 64비트 전체 크기로 쓸 때 부르는 이름이다.
+R8D : 8개의 레지스터 중 첫번째가 R8(64bit)다. R8 레지스터 64bit전체를 안쓰고, 하위 32비트 부분만 쪼개서 쓸때 부르는 이름이다.
+RDI는 64비트 짜리 큰 방이고, R8D는 새로 들어온 64비트 방을 반으로 잘라 쓰는 32비트 짜리 방이다.
+
+
+
+14. (True/False): In native 64-bit mode, you can use 16-bit real mode, but not the virtual-8086
+mode.
+(네이티브 64비트 모드에서는 16비트 리얼 모드는 사용할 수 있지만, Virtual-8086 모드는 쓸 수 없다.)
+
+False
+
+64비트 롱 모드(Long Mode)에 진입하면 옛날 16비트 방식인 리얼 모드와 Virtual-8086 모드 둘 다 하드웨어 차원에서 지원되지 않습니다.
+
+
+
+15. (True/False): The x86-64 processors have 4 more general-purpose registers than the x86
+processors. (x86-64 프로세서는 기존 x86보다 범용 레지스터가 4개 더 많다.)
+
+False
+
+기존 x86의 8개(EAX, EBX 등)에서 x86-64는 8개가 더 늘어나 총 16개(RAX~RSP, R8~R15)가 되었습니다.
+
+
+
+16. (True/False): The 64-bit version of Microsoft Windows does not support virtual-8086 mode.
+(64비트 버전의 Windows는 Virtual-8086 모드를 지원하지 않는다.)
+True
+
+CPU 하드웨어 자체가 64비트 모드에서 Virtual-8086 모드를 끌 뿐만 아니라, 64비트 윈도우 OS 차원에서도 16비트 DOS 프로그램 호환성 기능을 완전히 제거했습니다.
+
+
+
+17. (True/False): DRAM can only be erased using ultraviolet light.
+(DRAM은 자외선을 사용해야만 지울 수 있다.)
+False
+
+자외선으로 내용을 지우는 것은 옛날 ROM인 EPROM입니다. DRAM은 전원이 끊어지면 자동으로 데이터가 날아가는 휘발성 메모리입니다.
+
+
+
+18. (True/False): In 64-bit mode, you can use up to eight floating-point registers.
+(64비트 모드에서는 최대 8개의 부동소수점 레지스터만 사용할 수 있다.)
+False
+
+옛날 x87 FPU 레지스터는 8개였지만, 현대 64비트 모드에서는 실수를 처리할 때 SSE/AVX 기반의 XMM 레지스터를 16개(XMM0~XMM15)까지 대폭 확장해서 사용할 수 있습니다.
+
+
+
+19. (True/False): A bus is a plastic cable that is attached to the motherboard at both ends, but
+does not sit directly on the motherboard.
+(버스(Bus)는 메인보드 양끝에 연결되어 있지만 메인보드에 직접 닿지 않는 플라스틱 케이블이다.)
+False
+
+컴퓨터에서 말하는 버스(Bus)는 케이블이 아니라 메인보드 회로 기판 표면에 인쇄되어 데이터가 이동하는 미세한 구리 얇은 선(구리 구멍/선)들을 뜻합니다.
+
+
+
+20. (True/False): CMOS RAM is the same as static RAM, meaning that it holds its value with
+out any extra power or refresh cycles. 
+(CMOS RAM은 SRAM과 같아서 추가 전력이나 충전 없이 값을 유지한다.)
+
+False
+
+CMOS RAM도 전원이 꺼지면 데이터가 지워집니다. 그래서 메인보드에 붙어 있는 동전 모양의 바이오스 수전지(배터리)를 통해 계속 전기를 공급해 주어야 컴퓨터 시계나 설정값이 유지됩니다.
+
+
+
+21. (True/False): PCI connectors are used for graphics cards and sound cards.
+(PCI 슬롯은 그래픽 카드나 사운드 카드를 꽂는 데 사용된다.)
+True
+
+PCI(및 현재의 PCIe) 슬롯은 메인보드에 여러 확장 카드를 장착하기 위한 표준 연결 단자입니다.
+
+
+
+22. (True/False): The 8259A is a controller that handles external interrupts from hardware
+devices. (8259A는 하드웨어 장치의 외부 인터럽트를 처리하는 컨트롤러이다.)
+
+True
+
+키보드를 누르거나 마우스를 움직일 때 발생하는 신호(하드웨어 인터럽트)를 CPU에 순서대로 전달해 주는 대표적인 고전 PIC(Interrupt Controller) 칩입니다.
+
+
+
+23. (True/False): The acronym PCI stands for programmable component interface.
+(PCI의 약자는 Programmable Component Interface이다.)
+False
+
+PCI는 Peripheral Component Interconnect (주변 장치 상호 연결)의 약자입니다.
+
+
+
+24. (True/False): VRAM stands for virtual random access memory.
+(VRAM은 Virtual Random Access Memory(가상 RAM)의 약자이다.)
+False
+
+VRAM은 Video RAM의 약자로, 그래픽 카드가 화면 조작과 3D 그래픽 데이터를 처리하기 위해 전용으로 사용하는 메모리입니다.
+
+
+
+25. At which level(s) can an assembly language program manipulate input/output?
+(어셈블리 언어 프로그램은 어느 레벨(계층)에서 입출력(I/O)을 제어할 수 있나요?)
+
+3가지 레벨 모두 가능 (하드웨어 포트 직접 접근, BIOS 서비스, OS API 호출)
+
+어셈블리어는 가장 낮은 레벨인 하드웨어 포트(IN/OUT 명령어)를 직접 건드릴 수도 있고, 중간 수준인 BIOS 루틴, 가장 높은 수준인 운영체제 제공 함수(API)를 이용해 입출력을 제어할 수 있습니다.
+
+
+
+26. Why do game programs often send their sound output directly to the sound card’s hardware
+ports?
+(게임 프로그램들은 왜 소리 출력을 사운드 카드의 하드웨어 포트로 직접 보낼까요?)
+
+운영체제를 거칠 때 발생하는 지연 시간(Latency)을 줄이고 실시간 반응 속도를 극대화하기 위해서
+
+윈도우 같은 운영체제(OS)나 사운드 드라이버를 통과해서 소리를 내면 약간의 '대기 시간'이 생깁니다. 빠르게 반응해야 하는 고전 게임들은 소리가 밀리는 것을 막기 위해 하드웨어 포트를 직접 조작하여 즉시 소리가 나도록 만들었습니다.
+
+
