@@ -1,0 +1,154 @@
+3.10 Programming Exercises
+
+1. Integer Expression Calculation(정수 수식 계산)
+Using the AddTwo program from Section 3.2 as a reference, write a program that calculates the
+following expression, using registers: A = (A + B) − (C + D). Assign integer values to the EAX,
+EBX, ECX, and EDX registers.
+A = (A + B) - (C + D) 수식을 계산하는 프로그램입니다.)
+
+
+코드 스니펫
+.386
+.model flat, stdcall
+.stack 4096
+ExitProcess PROTO, dwExitCode:DWORD
+
+.code
+main PROC
+    mov eax, 30     ; A = 30
+    mov ebx, 20     ; B = 20
+    mov ecx, 10     ; C = 10
+    mov edx, 5      ; D = 5
+
+    add eax, ebx    ; EAX = 30 + 20 = 50  (A + B)
+    add ecx, edx    ; ECX = 10 + 5 = 15   (C + D)
+    sub eax, ecx    ; EAX = 50 - 15 = 35  (A + B) - (C + D)
+
+    INVOKE ExitProcess, 0
+main ENDP
+END main
+
+
+
+
+2. Symbolic Integer Constants(기호 정수 상수)
+Write a program that defines symbolic constants for all seven days of the week. Create an array
+variable that uses the symbols as initializers.
+(일주일의 7개 요일에 대한 상수를 정의하고 배열을 생성하는 프로그램입니다.)
+
+코드 스니펫
+.386
+.model flat, stdcall
+.stack 4096
+ExitProcess PROTO, dwExitCode:DWORD
+
+; 0부터 6까지 요일에 이름 붙이기
+SUNDAY = 0
+MONDAY = 1
+TUESDAY = 2
+WEDNESDAY = 3
+THURSDAY = 4
+FRIDAY = 5
+SATURDAY = 6
+
+.data
+; 상수를 이용해 배열 초기화
+weekArray BYTE SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY
+
+.code
+main PROC
+    INVOKE ExitProcess, 0
+main ENDP
+END main
+
+
+
+
+
+3. Data Definitions(데이터 정의) ; 다양한 데이터 타입 선언해보기
+Write a program that contains a definition of each data type listed in Table 3-2 in Section 3.4.
+Initialize each variable to a value that is consistent with its data type.
+(교재 표 3-2에 등장하는 주요 데이터 타입들을 선언하는 프로그램입니다.)
+
+코드 스니펫
+.386
+.model flat, stdcall
+.stack 4096
+ExitProcess PROTO, dwExitCode:DWORD
+
+.data
+var1 BYTE 10             ; 1바이트
+var2 SBYTE -5            ; 1바이트 (부호 있음)
+var3 WORD 1000           ; 2바이트
+var4 SWORD -500          ; 2바이트 (부호 있음)
+var5 DWORD 123456        ; 4바이트
+var6 SDWORD -99999       ; 4바이트 (부호 있음)
+var7 QWORD 123456789h    ; 8바이트
+var8 REAL4 3.14          ; 4바이트 실수(소수)
+
+.code
+main PROC
+    INVOKE ExitProcess, 0
+main ENDP
+END main
+
+
+
+
+4. Symbolic Text Constants(기호 텍스트 상수) ; 문자열 상수를 변수에 쓰기
+Write a program that defines symbolic names for several string literals (characters between
+quotes). Use each symbolic name in a variable definition.
+(문자열 리터럴에 대한 상수를 정의하고 변수에 활용하는 프로그램입니다.)
+
+코드 스니펫
+.386
+.model flat, stdcall
+.stack 4096
+ExitProcess PROTO, dwExitCode:DWORD
+
+; 자주 쓰는 문자열에 이름 붙이기
+TEXT1 EQU <"Hello World", 0>
+TEXT2 EQU <"Game Over", 0>
+
+.data
+msg1 BYTE TEXT1
+msg2 BYTE TEXT2
+
+.code
+main PROC
+    INVOKE ExitProcess, 0
+main ENDP
+END main
+
+
+
+5. Listing File for AddTwoSum(AddTwoSum 리스팅 파일 분석) ; 리스팅 파일 기계어 해석 예시
+Generate a listing file for the AddTwoSum program and write a description of the machine code
+bytes generated for each instruction. You might have to guess at some of the meanings of the
+byte values.
+(AddTwoSum 프로그램의 생성된 기계어를 분석하는 예시 설명입니다.)
+
+코드 스니펫
+
+; 리스팅 파일의 예시 구조
+00000000  B8 00000005     mov eax, 5
+00000005  83 C0 06        add eax, 6
+
+B8 00000005: B8은 32비트 즉시값을 EAX 레지스터에 MOV하라는 1바이트 오프코드(Opcode)입니다. 뒤따르는 00000005는 32비트 리터럴 5입니다 (리틀 엔디안 형태).
+
+83 C0 06: 83 C0은 EAX 레지스터에 8비트 정수를 덧셈(ADD)하라는 명령어 조합이며, 06은 피연산자인 정수 6입니다.
+
+
+6. AddVariables Program(64비트 변수로 수정)
+Modify the AddVariables program so it uses 64-bit variables. Describe the syntax errors gener
+ated by the assembler and what steps you took to resolve the errors
+(64비트 변수로 변환할 때 발생하는 오류와 해결 방법입니다.)
+
+
+문제: 32비트 어셈블리 환경에서 64비트 전용 레지스터(RAX 등)를 쓰거나, 64비트 변수 데이터를 32비트 레지스터에 한 번에 넣으려고 하면 구문 에러(지원하지 않는 명령어)가 납니다.
+
+해결법:
+
+32비트 환경이라면 64비트 숫자를 32비트씩 반으로 쪼개서 2개의 레지스터로 처리해야 합니다.
+
+또는 프로젝트를 x64(64비트) 어셈블리 개발 환경으로 변경해서 작성해야 합니다.
