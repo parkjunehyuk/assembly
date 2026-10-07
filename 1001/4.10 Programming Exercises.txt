@@ -1,0 +1,231 @@
+4.10 Programming Exercises
+The following exercises may be completed in either 32-bit mode or 64-bit mode.
+
+
+
+★1. Converting from Big Endian to Little Endian 
+Write a program that uses the variables below and MOV instructions to copy the value from
+bigEndian to littleEndian, reversing the order of the bytes. The number’s 32-bit value is under
+stood to be 12345678 hexadecimal.
+(Big Endian -> Little Endian 변환)
+
+.data
+bigEndian BYTE 12h,34h,56h,78h
+littleEndian DWORD?
+
+.code
+main PROC
+    mov al, [bigEndian + 3] ; 78h
+    mov BYTE PTR [littleEndian], al
+    mov al, [bigEndian + 2] ; 56h
+    mov BYTE PTR [littleEndian + 1], al
+    mov al, [bigEndian + 1] ; 34h
+    mov BYTE PTR [littleEndian + 2], al
+    mov al, [bigEndian]     ; 12h
+    mov BYTE PTR [littleEndian + 3], al
+    ret
+main ENDP
+
+
+
+
+
+★★2. Exchanging Pairs of Array Values
+Write a program with a loop and indexed addressing that exchanges every pair of values in an
+array with an even number of elements. Therefore, item i will exchange with item i+1, and item
+i+2 will exchange with item i+3, and so on.
+(배열의 짝수쌍 값 교환하기)
+
+.data
+array WORD 1, 2, 3, 4, 5, 6
+
+.code
+main PROC
+    mov ecx, LENGTHOF array / 2 ; 쌍의 개수만큼 반복
+    mov esi, 0
+
+L1:
+    mov ax, array[esi]
+    xchg ax, array[esi + 2]
+    mov array[esi], ax
+    add esi, 4                  ; 다음 쌍으로 이동 (2 WORDs = 4 bytes)
+    loop L1
+    ret
+main ENDP
+
+
+
+
+★★3. Summing the Gaps between Array Values
+Write a program with a loop and indexed addressing that calculates the sum of all the gaps
+between successive array elements. The array elements are doublewords, sequenced in nonde
+creasing order. So, for example, the array {0, 2, 5, 9, 10} has gaps of 2, 3, 4, and 1, whose sum
+equals 10.
+(배열 요소 간의 차이(Gap) 합계 구하기)
+
+.data
+array DWORD 0, 2, 5, 9, 10
+sum   DWORD 0
+
+.code
+main PROC
+    mov ecx, LENGTHOF array - 1 ; 반복 횟수 = 요소 수 - 1
+    mov esi, 0
+    mov eax, 0                  ; 합계 저장용
+
+L1:
+    mov ebx, array[esi + 4]
+    sub ebx, array[esi]         ; gap = array[i+1] - array[i]
+    add eax, ebx
+    add esi, 4
+    loop L1
+
+    mov sum, eax
+    ret
+main ENDP
+
+
+
+
+
+★★4. Copying a Word Array to a DoubleWord array
+Write a program that uses a loop to copy all the elements from an unsigned Word (16-bit) array
+into an unsigned doubleword (32-bit) array. 
+(WORD 배열을 DWORD 배열로 복사)
+
+.data
+wArray WORD  10, 20, 30, 40
+dArray DWORD 4 DUP(?)
+
+.code
+main PROC
+    mov ecx, LENGTHOF wArray
+    mov esi, 0
+    mov edi, 0
+
+L1:
+    movzx eax, wArray[esi]      ; 16비트 -> 32비트 Zero extension
+    mov dArray[edi], eax
+    add esi, TYPE wArray        ; +2
+    add edi, TYPE dArray        ; +4
+    loop L1
+    ret
+main ENDP
+
+
+
+
+★★5. Fibonacci Numbers
+Write a program that uses a loop to calculate the first seven values of the Fibonacci number sequence,
+described by the following formula: Fib(1) = 1, Fib(2) = 1, Fib(n) = Fib(n – 1) + Fib(n – 2).
+(피보나치 수열 7개 계산하기)
+
+.data
+fib BYTE 7 DUP(?)
+
+.code
+main PROC
+    mov fib[0], 1
+    mov fib[1], 1
+    mov ecx, 5                  ; 남은 5개 항목 계산
+    mov esi, 2
+
+L1:
+    mov al, fib[esi - 1]
+    add al, fib[esi - 2]
+    mov fib[esi], al
+    inc esi
+    loop L1
+    ret
+main ENDP
+
+
+
+★★★6. Reverse an Array
+Use a loop with indirect or indexed addressing to reverse the elements of an integer array in
+place. Do not copy the elements to any other array. Use the SIZEOF, TYPE, and LENGTHOF
+operators to make the program as flexible as possible if the array size and type should be
+changed in the future.
+(배열 제자리 뒤집기 (In-place Reverse))
+
+.data
+array DWORD 10h, 20h, 30h, 40h, 50h
+
+.code
+main PROC
+    mov esi, 0
+    mov edi, SIZEOF array - TYPE array ; 마지막 요소 오프셋
+    mov ecx, LENGTHOF array / 2        ; 절반만 반복
+
+L1:
+    mov eax, array[esi]
+    xchg eax, array[edi]
+    mov array[esi], eax
+    
+    add esi, TYPE array
+    sub edi, TYPE array
+    loop L1
+    ret
+main ENDP
+
+
+
+
+
+★★★7. Copy a String in Reverse Order
+Write a program with a loop and indirect addressing that copies a string from source to target,
+reversing the character order in the process. Use the following variables:
+source BYTE "This is the source string",0
+target BYTE SIZEOF source DUP('#')
+(문자열 거꾸로 복사하기)
+
+.data
+source BYTE "This is the source string", 0
+target BYTE SIZEOF source DUP('#')
+
+.code
+main PROC
+    mov ecx, SIZEOF source - 1         ; NULL 문자는 제외하고 복사
+    mov esi, 0
+    mov edi, SIZEOF source - 2         ; 끝 위치 지정
+
+L1:
+    mov al, source[esi]
+    mov target[edi], al
+    inc esi
+    dec edi
+    loop L1
+
+    mov target[SIZEOF source - 1], 0   ; 문자열 끝 NULL 처리
+    ret
+main ENDP
+
+
+
+
+
+★★★8. Shifting the Elements in an Array
+Using a loop and indexed addressing, write code that rotates the members of a 32-bit integer
+array forward one position. The value at the end of the array must wrap around to the first posi
+tion. For example, the array [10,20,30,40] would be transformed into [40,10,20,30].
+(배열 요소 한 칸씩 오른쪽 시프트 (Wrap around))
+
+.data
+array DWORD 10, 20, 30, 40
+
+.code
+main PROC
+    mov ecx, LENGTHOF array - 1
+    mov esi, SIZEOF array - TYPE array ; 마지막 요소 위치
+    mov eax, array[esi]                ; 마지막 요소를 보관
+
+L1:
+    mov ebx, array[esi - 4]
+    mov array[esi], ebx
+    sub esi, 4
+    loop L1
+
+    mov array[0], eax                  ; 보관해둔 마지막 요소를 첫 번째에 대입
+    ret
+main ENDP
+

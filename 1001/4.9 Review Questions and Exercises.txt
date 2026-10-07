@@ -1,0 +1,301 @@
+4.9 Review Questions and Exercises
+4.9.1 Short Answer
+1. What will be the value in EDX after each of the lines marked (a) and (b) execute?
+(a)와 (b)로 표시된 각 줄이 실행된 후 EDX 값은 얼마가 될까요?
+
+.data
+one WORD 8002h
+two WORD 4321h
+.code
+mov   edx,21348041h
+movsx edx,one			; (a)
+movsx edx,two			; (b)
+
+one = 8002h (16비트). 최상위 비트(MSB)가 1이므로 음수입니다. (1000 0000 0000 0010(2))
+32비트로 부호 확장 시 상위 16비트가 FFFFh로 채워집니다.
+정답 (a): FFFF8002h
+
+
+two = 4321h (16비트). MSB가 0이므로 양수입니다.
+32비트로 부호 확장 시 상위 16비트가 0000h로 채워집니다.
+정답 (b): 00004321h
+
+
+
+
+2. What will be the value in EAX after the following lines execute?
+(다음 줄들이 실행된 후 EAX의 값은 얼마가 될까요?)
+mov  eax,1002FFFFh
+inc ax
+
+ax의 공간만 지정해서 1을 더해라
+
+정답: 1002 0000 h
+
+
+
+3. What will be the value in EAX after the following lines execute?
+mov  eax,30020000h
+dec  ax
+
+ax의 공간만 지정해서 1을 더해라
+0000이 감소하여 FFFF가 된다.
+
+정답 : 3002FFFFh
+
+
+4. What will be the value in EAX after the following lines execute?
+mov  eax,1002FFFFh
+neg ax
+
+neg는 지정한 값의 2의 보수를 취한다.
+정답 : 10020001h
+
+5. What will be the value of the Parity flag after the following lines execute?
+(무슨 정답이 될거 같냐 패리티 플래그 라인 실행 후에)
+(5. 다음 코드가 실행된 후 패리티 플래그의 값은 무엇이 될까요?)
+
+mov  al,1
+add  al,3
+
+패리티 플래그는 1이 짝수 개일 때만 1이 되므로 정답은 0입니다.
+00000100b 2진수 안의 1의 개수가 홀수이므로 0이다
+
+Parity flag = 0
+
+
+6. What will be the value of EAX and the Sign flag after the following lines execute? 
+mov  eax,5
+sub  eax,6
+
+5-6=-1(FFFFFFFh). 결과가 음수 이므로 
+
+Sign flag = 1
+
+
+7. In the following code, the value in AL is intended to be a signed byte. Explain how the
+Overflow flag helps, or does not help you, to determine whether the final value in AL falls
+within a valid signed range.
+
+mov al,-1
+add  al,130
+
+129는 8비트 부호 있는 숫자가 담을 수 있는 한계인 -128 ~ +127를 넘으니
+Overflow Flag가 1로 켜지며 "부호 범위 초과 오류"를 알려줍니다.
+
+EAX 32
+AX 16
+AH, AL 8
+
+
+8. What value will RAX contain after the following instruction executes?
+mov  rax,44445555h
+
+rax는 64비트 레지스터이고
+
+x86-64 아키텍처에서는 32비트 목적지 레지스터에 값을 쓰면 상위 32비트가 자동으로 0으로
+채워지는(Zero-extension) 규칙이 있다.
+
+0000000044445555h가 된다.
+
+
+
+9. What value will RAX contain after the following instructions execute?
+.data
+dwordVal DWORD 84326732h
+.code
+mov  rax,0FFFFFFFF00000000h
+mov  rax,dwordVal
+
+rax의 하위32비트에 값이 덮어 씌워지고
+x86-64 규칙: "32비트 값을 레지스터에 쓸 때는 상위 32비트가 무조건 0으로 덮어씌워진다 (Zero-extended)."
+
+0000000084326735h가 된다.
+
+
+10. What value will EAX contain after the following instructions execute?
+
+
+.data
+dVal DWORD 12345678h
+.code
+mov  ax,3
+mov  WORD PTR dVal+2,ax
+mov  eax,dVal
+
+dVal + 0 번지: 78h (1번째 바이트)
+dVal + 1 번지: 56h (2번째 바이트)
+dVal + 2 번지: 34h (3번째 바이트)
+dVal + 3 번지: 12h (4번째 바이트)
+
+명령어에서 WORD PTR(2바이트 크기)을 붙였기 때문에, 
+CPU는 dVal+2 주소 위치(34h)부터 2바이트 연속으로 읽고 씁니다.
+
+dVal+2는 상위 2바이트 1234위치를 가리키고
+이자리를 0003으로 덮어 쓰므로
+00035678h가 된다.
+
+
+11. What will EAX contain after the following instructions execute?
+
+
+.data
+.dVal DWORD ?
+.code
+mov  dVal,12345678h
+mov  ax,WORD PTR dVal+2
+add  ax,3
+mov  WORD PTR dVal,ax
+mov  eax,dVal
+
+dVal = 12345678h
+ax = 1234
+ax+=3 -> 1237
+
+12341237h가 된다.
+
+
+
+12. (Yes/No): Is it possible to set the Overflow flag if you add a positive integer to a negative
+integer?
+
+(No): 양수 + 음수는 무슨 짓을 해도 오버플로우가 생기지 않습니다.
+
+
+
+13. (Yes/No): Will the Overflow flag be set if you add a negative integer to a negative integer
+and produce a positive result?
+
+(Yes): 음수끼리 더했는데 결과가 양수가 나오면 오버플로우입니다.
+
+
+
+14. (Yes/No): Is it possible for the NEG instruction to set the Overflow flag?
+
+(Yes): 가장 작은 음수(-128)의 부호를 NEG로 뒤집으면 +128이 되어 오버플로우가 생깁니다.
+
+
+
+15. (Yes/No): Is it possible for both the Sign and Zero flags to be set at the same time?
+Use the following variable definitions for Questions 16–19:
+
+
+(No): Zero Flag(결과가 0)와 Sign Flag(결과가 음수)는 동시에 켜질 수 없습니다. (0은 음수가 아님)
+
+
+.data
+var1 SBYTE -4,-2,3,1
+var2 WORD 1000h,2000h,3000h,4000h
+var3 SWORD -16,-42
+var4 DWORD 1,2,3,4,5
+
+
+
+16. For each of the following statements, state whether or not the instruction is valid:
+
+a.	mov   ax,var1?
+b.	mov   ax,var2
+c.	mov   eax,var3
+d.	mov   var2,var3
+e.	movzx ax,var2
+f.	movzx var2,al
+g.	mov   ds,ax
+h.	mov   ds,1000h
+  
+
+var1 : BYTE (8비트)
+
+var2 : WORD (16비트)
+
+var3 : DWORD (32비트)
+
+a는 Invalid(무효)
+ax는 16비트 레지스터인데, var1은 8비트 변수입니다. 크기가 서로 달라 오류가 발생합니다.
+
+
+b는 Valid(유효)
+ax(16비트)와 var2(16비트)의 크기가 16비트로 서로 일치하므로 올바른 명령어입니다.
+
+
+c는 Valid
+eax(32비트)와 var3(32비트)의 크기가 32비트로 서로 일치
+
+
+d는 Invalid # mov var2, var3
+x86에서는 메모리에서 메모리로 직접 mov하는 것은 불가능합니다.
+var2(16비트)와 var3(32비트)의 크기도 다릅니다.
+
+
+e는 Invalid # movzx ax, var2
+movzx(Zero Extension)는 더 작은 크기에서 더 큰 레지스터로 이동할 때 사용합니다.
+mov ax, var2를 써야한다.
+
+
+f는 Invalid #movzx var2, al
+movzx의 목적지(왼쪽)는 반드시 레지스터여야 합니다. var2는 메모리 변수이므로 
+목적지로 올 수 없습니다. (올바른 예: movzx ax, al)
+
+
+g는 Valid
+
+ds는 세그먼트 레지스터(16비트)입니다. 일반 16비트 레지스터(ax)의 값을 세그먼트 
+레지스터로 이동시키는 것은 올바른 문법입니다.
+
+
+h는 Invalid #mov ds, 1000h
+
+x86에서는 상수(Immediate value)를 세그먼트 레지스터(ds, es, ss 등)에 직접 넣을 수 없습니다.
+반드시 일반 레지스터를 거쳐서 넣어야 합니다. (예: mov ax, 1000h 후 mov ds, ax)
+
+
+
+17. What will be the hexadecimal value of the destination operand after each of the following
+instructions execute in sequence?
+
+mov  al,var1			; a.
+mov  ah, [var1+3]		; b.
+
+AL = 10h
+
+var1의 첫 번째 바이트값(10h)을 AL에 복사합니다.
+
+AH = 40h
+
+var1+3은 4번째 바이트 위치입니다
+
+
+
+18. What will be the value of the destination operand after each of the following instructions
+execute in sequence?
+
+mov  ax,var2			; a.
+mov  ax,[var2+4]		; b.
+mov  ax,var3			; c.
+mov  ax,[var3-2]		; d.
+
+a. ax = 1000h
+b. ax = 3000h
+
+var2+0 00h(하위)
+var2+1 10h(상위)
+var2+2 00h(하위)
+var2+3 20h(상위)
+var2+4 00h(하위)
+
+c. ax = FFF0h #-16을 16비트 16진수로 나타내면 FFF0h입니다.
+d. ax = 4000h #var3 메모리 바로 앞 2바이트 위치는 var2 배열의 마지막 요소인 4000h입니다.
+
+
+
+19. What will be the value of the destination operand after each of the following instructions
+execute in sequence?
+
+mov    edx,var4			; a.
+movzx  edx,var2			; b.
+mov    edx,[var4+4]		; c.
+movsx  edx,var1			; d.
+
+a. edx = 12345678h
+b. edx = 00001000h
+c. edx = 9ABCDEF0h
+d. edx = 00000010h

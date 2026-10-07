@@ -1,0 +1,200 @@
+4.9.2 Algorithm Workbench
+
+
+1. Write a sequence of MOV instructions that will exchange the upper and lower words in a
+doubleword variable named three.
+(32비트 변수 three의 상위/하위 WORD 교환)
+
+mov ax, WORD PTR [three]      ; 하위 16비트 읽기
+mov bx, WORD PTR [three + 2]  ; 상위 16비트 읽기
+mov WORD PTR [three], bx      ; 상위 16비트를 하위에 저장
+mov WORD PTR [three + 2], ax  ; 하위 16비트를 상위에 저장
+
+
+2. Using the XCHG instruction no more than three times, reorder the values in four 8-bit regis
+ters from the order A,B,C,D to B,C,D,A.
+(XCHG 3번 이하로 A, B, C, D $\rightarrow$ B, C, D, A 순서 변경)
+
+기본 상태: AL = A, BL = B, CL = C, DL = D
+
+xchg al, bl    ; AL=B, BL=A  (현재: B, A, C, D)
+xchg bl, cl    ; BL=C, CL=A  (현재: B, C, A, D)
+xchg cl, dl    ; CL=D, DL=A  (현재: B, C, D, A)
+
+
+3. Transmitted messages often include a parity bit whose value is combined with a data byte to
+produce an even number of 1 bits. Suppose a message byte in the AL register contains
+01110101. Show how you could use the Parity flag combined with an arithmetic instruction
+to determine if this message byte has even or odd parity.
+(AL(01110101b)의 패리티 검사 (산술 연산 + Parity Flag 활용))
+
+add al, 0      ; AL 값 변화 없이 플래그만 업데이트
+jp EvenParity  ; 1의 개수가 짝수개면(Parity Flag = 1) 점프
+; OddParity 처리 로직
+
+
+
+4. Write code using byte operands that adds two negative integers and causes the Overflow
+flag to be set.
+(음수 2개를 더해 오버플로우 플래그(OF) 발생시키기)
+
+mov al, -100   ; 8비트 음수
+add al, -50    ; 결과: -150 (8비트 한계 -128 초과 -> OF = 1)
+
+
+
+5. Write a sequence of two instructions that use addition to set the Zero and Carry flags at the
+same time.
+(덧셈(ADD)을 이용해 ZF와 CF를 동시에 1로 만들기)
+
+mov al, 0FFh
+add al, 1      ; FFh + 1 = 100h -> 8비트 연산 결과 00h (ZF=1), 올림수 발생 (CF=1)
+
+
+
+6. Write a sequence of two instructions that set the Carry flag using subtraction.
+(뺄셈(SUB)을 이용해 CF를 1로 만들기)
+
+mov al, 1
+sub al, 2      ; 작은 수에서 큰 수를 빼면 빌림수(Borrow)가 발생하여 CF = 1
+
+
+
+7. Implement the following arithmetic expression in assembly language: EAX = –val2 + 7 
+val3 + val1. Assume that val1, val2, and val3 are 32-bit integer variables.
+(산술식 구현: EAX = -val2 + 7 - val3 + val1)
+
+mov eax, val2
+neg eax        ; -val2
+add eax, 7     ; -val2 + 7
+sub eax, val3  ; -val2 + 7 - val3
+add eax, val1  ; -val2 + 7 - val3 + val1
+
+
+
+8. Write a loop that iterates through a doubleword array and calculates the sum of its elements
+using a scale factor with indexed addressing.
+배률 인덱스(Scale Factor)를 이용한 DWORD 배열 합계
+
+mov ecx, LENGTHOF array
+mov esi, 0
+mov eax, 0
+
+L1:
+    add eax, array[esi * TYPE array] ; Scale factor 적용
+    inc esi
+    loop L1
+
+
+
+9. Implement the following expression in assembly language: AX = (val2 + BX) –val4.
+Assume that val2 and val4 are 16-bit integer variables.
+(산술식 구현)
+
+mov ax, val2
+add ax, bx     ; val2 + BX
+sub ax, val4   ; (val2 + BX) - val4
+
+
+
+
+10. Write a sequence of two instructions that set both the Carry and Overflow flags at the same time.
+(Carry Flag(CF)와 Overflow Flag(OF)를 동시에 1로 만들기)
+
+mov al, 80h    ; Signed: -128 / Unsigned: 128
+add al, 80h    ; 80h + 80h = 100h -> AL = 00h, CF=1 (자리올림), OF=1 (음수+음수=양수)
+
+
+
+11. Write a sequence of instructions showing how the Zero flag could be used to indicate
+unsigned overflow after executing INC and DEC instructions.
+(INC/DEC 연산 후 Zero Flag를 이용한 부호 없는 오버플로우 감지)
+
+INC와 DEC 명령어는 Carry Flag를 변경하지 않는 특징이 있습니다. 
+따라서 ZF로 오버플로우를 감지합니다.
+
+; 8비트 최대값(255)에 1을 더해 오버플로우가 나면 0이 됨
+mov al, 255
+inc al         ; AL = 0, ZF = 1 (오버플로우 발생 알림)
+jz  OverflowDetected
+
+
+
+
+Use the following data definitions for Questions 12–18:
+
+.data
+myBytes  BYTE 10h,20h,30h,40h
+myWords  WORD 3 DUP(?),2000h
+myString BYTE "ABCDE"
+
+
+
+
+12. Insert a directive in the given data that aligns myBytes to an even-numbered address.
+(myBytes를 짝수 주소에 맞추기)
+
+ALIGN 2
+myBytes BYTE 10h, 20h, 30h, 40h
+
+
+
+13. What will be the value of EAX after each of the following instructions execute?
+
+mov  eax,TYPE myBytes			; a.
+mov  eax,LENGTHOF myBytes		; b.
+mov  eax,SIZEOF myBytes		; c.
+mov  eax,TYPE myWords			; d.
+mov  eax,LENGTHOF myWords		; e.
+mov  eax,SIZEOF myWords		; f.
+mov  eax,SIZEOF myString		; g.
+
+
+a. mov eax, TYPE myBytes: 1 (BYTE 크기)
+b. mov eax, LENGTHOF myBytes: 4 (요소 개수)
+c. mov eax, SIZEOF myBytes: 4 (1 X 4 바이트)
+d. mov eax, TYPE myWords: 2 (WORD 크기)
+e. mov eax, LENGTHOF myWords: 4 (3 + 1개 = 4개)
+f. mov eax, SIZEOF myWords: 8 (2 $\times$ 4 바이트)
+g. mov eax, SIZEOF myString: 5 (5자 문자열 = 5바이트)
+
+
+
+
+14. Write a single instruction that moves the first two bytes in myBytes to the DX register. The
+resulting value will be 2010h.
+(myBytes 첫 2바이트를 DX로 이동해 2010h 만들기)
+
+mov dx, WORD PTR myBytes ; 리틀 엔디안에 의해 10h, 20h가 DX에 2010h로 들어감
+
+
+
+15. Write an instruction that moves the second byte in myWords to the AL register.
+(myWords의 2번째 바이트를 AL로 이동)
+
+mov al, BYTE PTR [myWords + 1]
+
+
+
+16. Write an instruction that moves all four bytes in myBytes to the EAX register.
+(myBytes 4바이트 전체를 EAX로 이동)
+
+mov eax, DWORD PTR myBytes
+
+
+
+17. Insert a LABEL directive in the given data that permits myWords to be moved directly to a
+32-bit register.
+(myWords를 32비트 레지스터로 직접 이동할 수 있게 LABEL 추가)
+
+myWordsDword LABEL DWORD
+myWords WORD 3 DUP(?), 2000h
+
+
+
+18. Insert a LABEL directive in the given data that permits myBytes to be moved directly to a
+16-bit register.
+(myBytes를 16비트 레지스터로 직접 이동할 수 있게 LABEL 추가)
+
+myBytesWord LABEL WORD
+myBytes BYTE 10h, 20h, 30h, 40h
