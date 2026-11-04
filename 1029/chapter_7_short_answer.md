@@ -1,0 +1,349 @@
+# 📘 Chapter 7. 정수 연산 (Integer Arithmetic) 풀이 및 개념 정리
+
+x86 어셈블리 언어(Kip Irvine 교재 기준) Chapter 7 연습문제 1~10번 풀이 노트입니다. Shift/Rotate, 곱셈/나눗셈 레지스터 분할 구조, Carry 연산, 다중 바이트 연산의 핵심 개념을 쉽게 이해할 수 있도록 정리했습니다.
+
+---
+
+## 💡 핵심 가이드: 레지스터 연산 및 자릿수 확장 규칙
+
+### 1. Shift & Rotate 핵심 차이점
+* **`ROL / ROR`**: 레지스터 내부 비트끼리만 순환 회전 (Carry Flag는 복사본만 저장)
+* **`RCL / RCR`**: Carry Flag(CF)를 하나의 비트 칸으로 포함하여 함께 회전 (징검다리 역할, 다중 워드/레지스터 연결 연산 시 필수)
+
+### 2. 왜 `EDX:EAX` (또는 `DX:AX`)처럼 큰 통을 만들까요?
+곱셈을 하면 자릿수가 최대 **2배**로 늘어나고, 나눗셈을 안전하게 수행하려면 **피나눗수의 통이 나누는 수보다 커야** 합니다. 연산 결과가 32비트 레지스터 하나에 다 들어가지 않고 넘치는 현상(Overflow)을 막기 위해, CPU는 **레지스터 2개를 연결해 64비트짜리 빅사이즈 통(`EDX:EAX`)**을 만들어 사용합니다.
+
+* **곱셈 (`MUL`)**: $16\text{비트} \times 16\text{비트}$ 연산 시 결과는 상위 `DX`, 하위 `AX`에 분할 저장
+* **나눗셈 (`DIV`)**: 피나눗수를 64비트(`EDX:EAX`)로 먼저 넓혀 놓은 뒤 32비트로 나눔
+  * ⚠️ **주의**: 양수 나눗셈 시 상위 레지스터(`EDX`)에 쓰레기 값이 들어있으면 계산이 엉키므로, 연산 전 **`mov edx, 0`으로 상위 통을 깨끗이 청소**해야 함!
+
+---
+
+## 📌 Question 1. Shift 및 Rotate 기본 연산
+
+### 1. 문제 (Problem)
+다음 코드 시퀀스가 실행된 후 각 Shift 또는 Rotate 지시어 실행 직후의 `AL` 레지스터 값을 구하시오.
+
+```assembly
+mov al, 0D4h
+shr al, 1    ; a.
+mov al, 0D4h
+sar al, 1    ; b.
+mov al, 0D4h
+sar al, 4    ; c.
+mov al, 0D4h
+rol al, 1    ; d.
+```
+
+### 2. 풀이 (Solution)
+* **초기값:** `0D4h` = `1101 0100b`
+* **a. `shr al, 1` (논리 오른쪽 쉬프트):**  
+  오른쪽으로 1비트 밀고, 맨 왼쪽(MSB)은 `0`으로 채움  
+  `1101 0100b` $\rightarrow$ `0110 1010b` (`6Ah`)
+* **b. `sar al, 1` (산술 오른쪽 쉬프트):**  
+  오른쪽으로 1비트 밀되, 음수 부호비트(`1`)를 그대로 유지  
+  `1101 0100b` $\rightarrow$ `1110 1010b` (`EAh`)
+* **c. `sar al, 4` (산술 오른쪽 4칸 쉬프트):**  
+  부호비트 `1`을 유지하면서 오른쪽으로 4비트 밀어냄  
+  `1101 0100b` $\rightarrow$ `1111 1101b` (`FDh`)
+* **d. `rol al, 1` (왼쪽 순환 회전):**  
+  맨 왼쪽 비트 `1`이 튀어나와 맨 오른쪽(LSB)으로 순환진입  
+  `1101 0100b` $\rightarrow$ `1010 1001b` (`A9h`)
+
+### 3. 정답 (Answer)
+- **a.** `AL = 6Ah`
+- **b.** `AL = EAh`
+- **c.** `AL = FDh`
+- **d.** `AL = A9h`
+
+---
+
+## 📌 Question 2. Rotate 및 Carry 포함 회전 연산
+
+### 1. 문제 (Problem)
+다음 코드 시퀀스가 실행된 후 각 Shift 또는 Rotate 지시어 실행 직후의 `AL` 레지스터 값을 구하시오.
+
+```assembly
+mov al, 0D4h
+ror al, 3    ; a.
+mov al, 0D4h
+rol al, 7    ; b.
+stc
+mov al, 0D4h
+rcl al, 1    ; c.
+stc
+mov al, 0D4h
+rcr al, 3    ; d.
+```
+
+### 2. 풀이 (Solution)
+* **초기값:** `0D4h` = `1101 0100b`
+* **a. `ror al, 3` (오른쪽 3칸 순환 회전):**  
+  하위 3비트(`100`)가 상위 쪽으로 순환 이동  
+  `1101 0100b` $\rightarrow$ `1001 1010b` (`9Ah`)
+* **b. `rol al, 7` (왼쪽 7칸 순환 회전):**  
+  8비트 공간에서 왼쪽으로 7칸 돌리는 것은 **오른쪽으로 1칸 돌리는 것과 결과가 동일**  
+  `1101 0100b` $\rightarrow$ `0110 1010b` (`6Ah`)
+* **c. `stc` + `rcl al, 1` (Carry 포함 왼쪽 회전):**  
+  `CF=1`로 설정한 후, `AL` 8비트 + `CF` 1비트 = 총 9비트 고리를 회전  
+  `CF(1) 1101 0100b` $\rightarrow$ 맨 앞 `1`은 CF로 가고, 원래 `CF(1)`이 맨 오른쪽으로 들어옴 $\rightarrow$ `1010 1001b` (`A9h`)
+* **d. `stc` + `rcr al, 3` (Carry 포함 오른쪽 3칸 회전):**  
+  `CF=1` 설정 후 9비트 고리를 오른쪽으로 3칸 회전  
+  `CF(1) 1101 0100b` $\rightarrow$ `1001 1010b` (`9Ah`)
+
+### 3. 정답 (Answer)
+- **a.** `AL = 9Ah`
+- **b.** `AL = 6Ah`
+- **c.** `AL = A9h`
+- **d.** `AL = 9Ah`
+
+---
+
+## 📌 Question 3. 16비트 곱셈(`MUL`)과 레지스터 분할 구조
+
+### 1. 문제 (Problem)
+다음 지시어가 실행된 후 `AX`와 `DX` 레지스터의 최종 값은 무엇입니까?
+
+```assembly
+mov dx, 0
+mov ax, 222h
+mov cx, 100h
+mul cx
+```
+
+### 2. 핵심 개념 (Core Concept)
+* **피연산자 규칙:** `mul cx` 지시어는 피연산자를 하나만 적지만, 내부적으로 무조건 **`AX × CX`**를 수행합니다.
+* **레지스터 분할 규칙:** 16비트끼리 곱하면 결과가 32비트까지 커질 수 있어 single 레지스터에 다 안 들어갑니다. 따라서 **상위 16비트는 `DX`**, **하위 16비트는 `AX`**에 고정 분할 저장됩니다.
+
+### 3. 풀이 (Solution)
+1. `AX` (`0222h`) $\times$ `CX` (`0100h`) = `00022200h` (32비트 연산 결과)
+2. 전체 32비트 연산 결과를 상위/하위 16비트로 나누어 저장:
+   ```text
+   [ 32비트 곱셈 결과: 00022200h ]
+   
+      상위 16비트 (Upper)          하위 16비트 (Lower)
+   ┌───────────────────────┐    ┌───────────────────────┐
+   │        0002h          │    │         2200h         │
+   └───────────────────────┘    └───────────────────────┘
+              │                            │
+              ▼                            ▼
+         DX 레지스터                  AX 레지스터
+   ```
+
+### 4. 정답 (Answer)
+- **`DX = 0002h`**
+- **`AX = 2200h`**
+
+---
+
+## 📌 Question 4. 8비트 나눗셈(`DIV`) 연산
+
+### 1. 문제 (Problem)
+다음 지시어가 실행된 후 `AX` 레지스터의 최종 값은 무엇입니까?
+
+```assembly
+mov ax, 63h
+mov bl, 10h
+div bl
+```
+
+### 2. 풀이 (Solution)
+* **8비트 DIV 연산 규칙:** `AX / 8비트 레지스터(BL)`
+  * 몫(Quotient) $\rightarrow$ `AL` 저장
+  * 나머지(Remainder) $\rightarrow$ `AH` 저장
+* **계산:** `63h` (10진수 99) / `10h` (10진수 16)
+  * 몫 = `6` (`06h`)
+  * 나머지 = `3` (`03h`)
+* **`AX` 결합:** 상위 `AH(03h)` + 하위 `AL(06h)` = `0306h`
+
+### 3. 정답 (Answer)
+- **`AX = 0306h`**
+
+---
+
+## 📌 Question 5. 32비트 나눗셈(`DIV`) 연산
+
+### 1. 문제 (Problem)
+다음 지시어가 실행된 후 `EAX`와 `EDX` 레지스터의 최종 값은 무엇입니까?
+
+```assembly
+mov eax, 123400h
+mov edx, 0
+mov ebx, 10h
+div ebx
+```
+
+### 2. 풀이 (Solution)
+* **32비트 DIV 연산 규칙:** `EDX:EAX / 32비트 레지스터(EBX)`
+  * 몫 $\rightarrow$ `EAX` 저장
+  * 나머지 $\rightarrow$ `EDX` 저장
+* `mov edx, 0`을 통해 상위 32비트 통을 깨끗이 비워둠 (피나눗수 = `00000000_00123400h`)
+* **계산:** `123400h / 10h`
+  * 몫 = `00012340h` $\rightarrow$ `EAX`
+  * 나머지 = `0` $\rightarrow$ `EDX`
+
+### 3. 정답 (Answer)
+- **`EAX = 00012340h`**
+- **`EDX = 00000000h`**
+
+---
+
+## 📌 Question 6. 16비트 나눗셈 오버플로우 (Divide Overflow)
+
+### 1. 문제 (Problem)
+다음 지시어가 실행된 후 `AX`와 `DX` 레지스터의 최종 값은 무엇입니까?
+
+```assembly
+mov ax, 4000h
+mov dx, 500h
+mov bx, 10h
+div bx
+```
+
+### 2. 풀이 및 오류 분석 (Solution & Error Diagnosis)
+* **피나눗수 (`DX:AX`):** `05004000h` (10진수 83,902,464)
+* **나누는 수 (`BX`):** `10h` (10진수 16)
+* **계산된 몫:** `05004000h / 10h = 00500400h`
+* 🚨 **오류 원인 (왜 실패하나요?):**
+  16비트 나눗셈에서 몫은 **16비트 전용 그릇인 `AX` 레지스터**에만 담아야 합니다. 하지만 16비트 그릇이 담을 수 있는 한계치는 `FFFFh`(65,535)까지입니다.  
+  계산된 몫 `500400h`는 이 한계치를 훨씬 넘어서기 때문에 **작은 그릇에 과도한 물을 부어 넘치는 현상(Divide Overflow Exception)**이 발생하며, CPU가 안전을 위해 프로그램을 즉시 강제 종료시킵니다.
+
+### 3. 정답 (Answer)
+- **Divide Overflow 발생 (프로그램 비정상 종료 / 레지스터 값 유효하지 않음)**
+
+---
+
+## 📌 Question 7. Carry를 포함한 가산(`ADC`)
+
+### 1. 문제 (Problem)
+다음 지시어들이 실행된 후 `BX` 레지스터의 최종 값은 무엇입니까?
+
+```assembly
+mov bx, 5
+stc
+mov ax, 60h
+adc bx, ax
+```
+
+### 2. 풀이 (Solution)
+* `stc` 지시어로 Carry Flag (`CF`)를 일부러 `1`로 세움
+* **`ADC` 연산식:** `BX = BX + AX + CF` (올림수까지 함께 더함)
+* **계산:** `5 + 60h + 1` = `5 + 96 + 1 = 102` (16진수 `66h`)
+
+### 3. 정답 (Answer)
+- **`BX = 0066h`**
+
+---
+
+## 📌 Question 8. 64비트 모드에서의 나눗셈 (`DIV`)
+
+### 1. 문제 (Problem)
+다음 코드가 64비트 모드에서 실행될 때의 출력을 설명하시오.
+
+```assembly
+.data
+dividend_hi QWORD 00000108h
+dividend_lo QWORD 33300020h
+divisor     QWORD 00000100h
+
+.code
+mov rdx, dividend_hi
+mov rax, dividend_lo
+div divisor
+```
+
+### 2. 풀이 (Solution)
+* **64비트 DIV 연산 규칙:** `RDX:RAX / divisor`
+  * 몫 $\rightarrow$ `RAX` 저장
+  * 나머지 $\rightarrow$ `RDX` 저장
+* **피나눗수 (`RDX:RAX`):** `00000108_33300020h` (128비트 크기 확장)
+* **나누는 수 (`divisor`):** `100h`
+* 16진수에서 `100h`로 나누면 숫자가 오른쪽으로 2자리(8비트)만큼 밀려남
+  * 몫 = `0000000108333000h` $\rightarrow$ `RAX`
+  * 나머지 = `0000000000000020h` $\rightarrow$ `RDX`
+
+### 3. 정답 (Answer)
+- **`RAX = 0000000108333000h`** (몫)
+- **`RDX = 0000000000000020h`** (나머지)
+
+---
+
+## 📌 Question 9. 다중 바이트 뺄셈 코드의 논리 오류 수정
+
+### 1. 문제 (Problem)
+`val2`를 `val1`에서 빼도록 작성되었으나 논리 오류가 있는 다음 프로그램을 찾아서 수정하시오.
+
+```assembly
+.data
+val1   QWORD 20403004362047A1h
+val2   QWORD 055210304A2630B2h
+result QWORD 0
+
+.code
+mov cx, 8 
+mov esi, val1 
+mov edi, val2
+clc 
+top:
+mov al, BYTE PTR[esi] 
+sbb al, BYTE PTR[edi] 
+mov BYTE PTR[esi],al 
+dec esi
+dec edi
+loop top
+```
+
+### 2. 오류 분석 및 해결책 (Diagnosis & Solution)
+1. **오프셋 설정 및 시작 위치 오류:**  
+   컴퓨터 뺄셈은 사람의 필산과 똑같이 **가장 작은 단위(맨 오른쪽, 최하위 바이트)부터** 계산을 시작해야 윗자리로 빌림(Borrow)이 잘 넘어갑니다. 따라서 오프셋 시작점을 끝 위치인 `+ 7`로 지정해야 합니다.
+2. **`OFFSET` 키워드 누락:**  
+   `mov esi, val1`은 변수 안의 데이터 값을 직접 로드하므로, 메모리 주소를 가리키려면 `OFFSET`을 반드시 붙여야 합니다.
+3. **결과 저장 위치 오류:**  
+   원본 값인 `val1` 메모리를 덮어쓰지 않고 `result` 변수에 따로 저장하도록 구문 수정이 필요합니다.
+
+### 3. 정답 (수정된 코드)
+```assembly
+.code
+    mov  cx, 8                  ; 8바이트 루프 카운터
+    mov  esi, OFFSET val1 + 7   ; val1의 최하위 바이트(맨 오른쪽) 가리킴
+    mov  edi, OFFSET val2 + 7   ; val2의 최하위 바이트(맨 오른쪽) 가리킴
+    mov  ebx, OFFSET result + 7 ; result의 최하위 바이트 위치
+    clc                         ; Carry Flag 초기화 (첫 뺄셈 시 빌림 없음)
+
+top:
+    mov  al, BYTE PTR [esi]     ; val1 바이트 가져오기
+    sbb  al, BYTE PTR [edi]     ; Borrow(빌림)를 포함하여 val2 뺄셈
+    mov  BYTE PTR [ebx], al     ; 계산 결과를 result에 저장
+    dec  esi                    ; 다음 상위 바이트(왼쪽)로 이동
+    dec  edi
+    dec  ebx
+    loop top
+```
+
+---
+
+## 📌 Question 10. 64비트 `IMUL` (상수 곱셈)
+
+### 1. 문제 (Problem)
+64비트 모드에서 다음 지시어들이 실행된 후 `RAX` 레지스터의 16진수 값은 무엇입니까?
+
+```assembly
+.data
+multiplicand QWORD 0001020304050000h
+
+.code
+imul rax, multiplicand, 4
+```
+
+### 2. 풀이 (Solution)
+* **3-피연산자 IMUL 규칙:** `RAX = multiplicand * 4`
+* 16진수 각 바이트 자릿수에 `4`를 곱한 결과를 바로 연결:
+  * `00h * 4 = 00h`
+  * `05h * 4 = 14h` (10진수 20)
+  * `04h * 4 = 10h` (10진수 16)
+  * `03h * 4 = 0Ch` (10진수 12)
+  * `02h * 4 = 08h` (10진수 8)
+  * `01h * 4 = 04h` (10진수 4)
+
+### 3. 정답 (Answer)
+- **`RAX = 0004080C10140000h`**
